@@ -4,7 +4,7 @@ import (
 	"io"
 	"net"
 
-	"github.com/huin/goupnp/httpu"
+	"github.com/tailscale/goupnp/httpu"
 )
 
 // httpuClient creates a HTTPU client that multiplexes to all multicast-capable

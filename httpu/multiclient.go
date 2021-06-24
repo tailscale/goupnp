@@ -49,14 +49,14 @@ func (mc *MultiClient) Do(
 }
 
 func (mc *MultiClient) sendRequests(
-	results chan<-[]*http.Response,
+	results chan<- []*http.Response,
 	req *http.Request,
 	timeout time.Duration,
 	numSends int,
 ) error {
 	tasks := &errgroup.Group{}
 	for _, d := range mc.delegates {
-		d := d  // copy for closure
+		d := d // copy for closure
 		tasks.Go(func() error {
 			responses, err := d.Do(req, timeout, numSends)
 			if err != nil {

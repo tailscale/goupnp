@@ -87,7 +87,6 @@ func TestActionInputs(t *testing.T) {
 	}
 }
 
-
 func TestEscapeXMLText(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

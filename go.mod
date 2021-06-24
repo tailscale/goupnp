@@ -1,4 +1,4 @@
-module github.com/huin/goupnp
+module github.com/tailscale/goupnp
 
 go 1.14
 
