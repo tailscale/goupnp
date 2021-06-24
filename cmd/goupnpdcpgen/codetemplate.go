@@ -17,11 +17,12 @@ package {{$name}}
 // ***********************************************************
 
 import (
+  "context"
 	"net/url"
 	"time"
 
-	"github.com/huin/goupnp"
-	"github.com/huin/goupnp/soap"
+	"github.com/tailscale/goupnp"
+	"github.com/tailscale/goupnp/soap"
 )
 
 // Hack to avoid Go complaining if time isn't used.
@@ -115,7 +116,7 @@ func new{{$srvIdent}}ClientsFromGenericClients(genericClients []goupnp.ServiceCl
 // Return values:{{range $woutargs}}{{if .HasDoc}}
 //
 // * {{.Name}}: {{.Document}}{{end}}{{end}}{{end}}
-func (client *{{$srvIdent}}) {{.Name}}({{range $winargs -}}
+func (client *{{$srvIdent}}) {{.Name}}(ctx context.Context, {{range $winargs -}}
 {{.AsParameter}}, {{end -}}
 ) ({{range $woutargs -}}
 {{.AsParameter}}, {{end}} err error) {
@@ -132,7 +133,7 @@ func (client *{{$srvIdent}}) {{.Name}}({{range $winargs -}}
 	response := {{if $woutargs}}&{{template "argstruct" $woutargs}}{{"{}"}}{{else}}{{"interface{}(nil)"}}{{end}}
 
 	// Perform the SOAP call.
-	if err = client.SOAPClient.PerformAction({{$srv.URNParts.Const}}, "{{.Name}}", request, response); err != nil {
+	if err = client.SOAPClient.PerformAction(ctx, {{$srv.URNParts.Const}}, "{{.Name}}", request, response); err != nil {
 		return
 	}
 

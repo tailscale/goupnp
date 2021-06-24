@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/huin/goupnp"
-	"github.com/huin/goupnp/ssdp"
+	"github.com/tailscale/goupnp"
+	"github.com/tailscale/goupnp/ssdp"
 )
 
 func main() {

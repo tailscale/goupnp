@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"strings"
 
-	"github.com/huin/goupnp"
-	"github.com/huin/goupnp/scpd"
-	"github.com/huin/goutil/codegen"
+	"github.com/tailscale/goupnp"
+	"github.com/tailscale/goupnp/scpd"
 )
 
 // DCP collects together information about a UPnP Device Control Protocol.
@@ -80,7 +80,7 @@ func (dcp *DCP) writeCode(outFile string, useGofmt bool) error {
 	}
 	var output io.WriteCloser = packageFile
 	if useGofmt {
-		if output, err = codegen.NewGofmtWriteCloser(output); err != nil {
+		if output, err = NewGofmtWriteCloser(output); err != nil {
 			packageFile.Close()
 			return err
 		}
@@ -219,4 +219,47 @@ func extractURNParts(urn, expectedPrefix string) (*URNParts, error) {
 	}
 	name, version := parts[0], parts[1]
 	return &URNParts{urn, name, version}, nil
+}
+
+// Taken from: https://github.com/huin/goutil/blob/master/codegen/gofmt.go
+// License: https://github.com/huin/goutil/blob/master/LICENSE
+// NewGofmtWriteCloser returns an io.WriteCloser that filters what is written
+// to it through gofmt. It must be closed for this process to be completed, an
+// error from Close can be due to syntax errors in the source that has been
+// written.
+type goFmtWriteCloser struct {
+	output io.WriteCloser
+	stdin  io.WriteCloser
+	gofmt  *exec.Cmd
+}
+
+func NewGofmtWriteCloser(output io.WriteCloser) (io.WriteCloser, error) {
+	gofmt := exec.Command("gofmt")
+	gofmt.Stdout = output
+	gofmt.Stderr = os.Stderr
+	stdin, err := gofmt.StdinPipe()
+	if err != nil {
+		return nil, err
+	}
+	if err = gofmt.Start(); err != nil {
+		return nil, err
+	}
+	return &goFmtWriteCloser{
+		output: output,
+		stdin:  stdin,
+		gofmt:  gofmt,
+	}, nil
+}
+
+func (gwc *goFmtWriteCloser) Write(p []byte) (int, error) {
+	return gwc.stdin.Write(p)
+}
+
+func (gwc *goFmtWriteCloser) Close() error {
+	gwc.stdin.Close()
+	if err := gwc.output.Close(); err != nil {
+		gwc.gofmt.Wait()
+		return err
+	}
+	return gwc.gofmt.Wait()
 }

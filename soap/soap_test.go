@@ -2,6 +2,7 @@ package soap
 
 import (
 	"bytes"
+	"context"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -60,7 +61,7 @@ func TestActionInputs(t *testing.T) {
 	}
 	in := In{"foo", "bar", "quoted=\"baz\""}
 	gotOut := Out{}
-	err = client.PerformAction("mynamespace", "myaction", &in, &gotOut)
+	err = client.PerformAction(context.Background(), "mynamespace", "myaction", &in, &gotOut)
 	if err != nil {
 		t.Fatal(err)
 	}
