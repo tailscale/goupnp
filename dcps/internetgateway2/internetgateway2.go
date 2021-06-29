@@ -50,9 +50,9 @@ type WANIPConnection1 struct {
 // if the discovery process failed outright.
 //
 // This is a typical entry calling point into this package.
-func NewWANIPConnection1Clients() (clients []*WANIPConnection1, errors []error, err error) {
+func NewWANIPConnection1Clients(ctx context.Context) (clients []*WANIPConnection1, errors []error, err error) {
 	var genericClients []goupnp.ServiceClient
-	if genericClients, errors, err = goupnp.NewServiceClients(URN_WANIPConnection_1); err != nil {
+	if genericClients, errors, err = goupnp.NewServiceClients(ctx, URN_WANIPConnection_1); err != nil {
 		return
 	}
 	clients = newWANIPConnection1ClientsFromGenericClients(genericClients)
@@ -706,9 +706,9 @@ type WANIPConnection2 struct {
 // if the discovery process failed outright.
 //
 // This is a typical entry calling point into this package.
-func NewWANIPConnection2Clients() (clients []*WANIPConnection2, errors []error, err error) {
+func NewWANIPConnection2Clients(ctx context.Context) (clients []*WANIPConnection2, errors []error, err error) {
 	var genericClients []goupnp.ServiceClient
-	if genericClients, errors, err = goupnp.NewServiceClients(URN_WANIPConnection_2); err != nil {
+	if genericClients, errors, err = goupnp.NewServiceClients(ctx, URN_WANIPConnection_2); err != nil {
 		return
 	}
 	clients = newWANIPConnection2ClientsFromGenericClients(genericClients)
@@ -1517,9 +1517,9 @@ type WANPPPConnection1 struct {
 // if the discovery process failed outright.
 //
 // This is a typical entry calling point into this package.
-func NewWANPPPConnection1Clients() (clients []*WANPPPConnection1, errors []error, err error) {
+func NewWANPPPConnection1Clients(ctx context.Context) (clients []*WANPPPConnection1, errors []error, err error) {
 	var genericClients []goupnp.ServiceClient
-	if genericClients, errors, err = goupnp.NewServiceClients(URN_WANPPPConnection_1); err != nil {
+	if genericClients, errors, err = goupnp.NewServiceClients(ctx, URN_WANPPPConnection_1); err != nil {
 		return
 	}
 	clients = newWANPPPConnection1ClientsFromGenericClients(genericClients)

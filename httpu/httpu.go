@@ -19,11 +19,7 @@ type ClientInterface interface {
 	// the responses that were received. An error is only returned for failing to
 	// send the request. Failures in receipt simply do not add to the resulting
 	// responses.
-	Do(
-		req *http.Request,
-		timeout time.Duration,
-		numSends int,
-	) ([]*http.Response, error)
+	Do(req *http.Request, numSends int) ([]*http.Response, error)
 }
 
 // HTTPUClient is a client for dealing with HTTPU (HTTP over UDP). Its typical
@@ -73,7 +69,6 @@ func (httpu *HTTPUClient) Close() error {
 // HTTPUClient.
 func (httpu *HTTPUClient) Do(
 	req *http.Request,
-	timeout time.Duration,
 	numSends int,
 ) ([]*http.Response, error) {
 	httpu.connLock.Lock()
@@ -101,7 +96,11 @@ func (httpu *HTTPUClient) Do(
 	if err != nil {
 		return nil, err
 	}
-	if err = httpu.conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+	deadline, ok := req.Context().Deadline()
+	if !ok {
+		deadline = time.Now().Add(2 * time.Second)
+	}
+	if err = httpu.conn.SetDeadline(deadline); err != nil {
 		return nil, err
 	}
 

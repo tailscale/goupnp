@@ -2,7 +2,6 @@ package httpu
 
 import (
 	"net/http"
-	"time"
 
 	"golang.org/x/sync/errgroup"
 )
@@ -26,7 +25,6 @@ func NewMultiClient(delegates []ClientInterface) *MultiClient {
 // Do implements ClientInterface.Do.
 func (mc *MultiClient) Do(
 	req *http.Request,
-	timeout time.Duration,
 	numSends int,
 ) ([]*http.Response, error) {
 	tasks := &errgroup.Group{}
@@ -34,7 +32,7 @@ func (mc *MultiClient) Do(
 	results := make(chan []*http.Response)
 	tasks.Go(func() error {
 		defer close(results)
-		return mc.sendRequests(results, req, timeout, numSends)
+		return mc.sendRequests(results, req, numSends)
 	})
 
 	var responses []*http.Response
@@ -51,14 +49,13 @@ func (mc *MultiClient) Do(
 func (mc *MultiClient) sendRequests(
 	results chan<- []*http.Response,
 	req *http.Request,
-	timeout time.Duration,
 	numSends int,
 ) error {
 	tasks := &errgroup.Group{}
 	for _, d := range mc.delegates {
 		d := d // copy for closure
 		tasks.Go(func() error {
-			responses, err := d.Do(req, timeout, numSends)
+			responses, err := d.Do(req, numSends)
 			if err != nil {
 				return err
 			}

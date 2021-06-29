@@ -1,6 +1,7 @@
 package ssdp
 
 import (
+	"context"
 	"errors"
 	"log"
 	"net/http"
@@ -27,11 +28,7 @@ const (
 
 // HTTPUClient is the interface required to perform HTTP-over-UDP requests.
 type HTTPUClient interface {
-	Do(
-		req *http.Request,
-		timeout time.Duration,
-		numSends int,
-	) ([]*http.Response, error)
+	Do(req *http.Request, numSends int) ([]*http.Response, error)
 }
 
 // SSDPRawSearch performs a fairly raw SSDP search request, and returns the
@@ -42,6 +39,7 @@ type HTTPUClient interface {
 // reasonable value for this. numSends is the number of requests to send - 3 is
 // a reasonable value for this.
 func SSDPRawSearch(
+	ctx context.Context,
 	httpu HTTPUClient,
 	searchTarget string,
 	maxWaitSeconds int,
@@ -51,7 +49,7 @@ func SSDPRawSearch(
 		return nil, errors.New("ssdp: maxWaitSeconds must be >= 1")
 	}
 
-	req := http.Request{
+	req := &http.Request{
 		Method: methodSearch,
 		// TODO: Support both IPv4 and IPv6.
 		Host: ssdpUDP4Addr,
@@ -65,7 +63,10 @@ func SSDPRawSearch(
 			"ST":   []string{searchTarget},
 		},
 	}
-	allResponses, err := httpu.Do(&req, time.Duration(maxWaitSeconds)*time.Second+100*time.Millisecond, numSends)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(maxWaitSeconds)*time.Second+100*time.Millisecond)
+	defer cancel()
+	req = req.WithContext(ctx)
+	allResponses, err := httpu.Do(req, numSends)
 	if err != nil {
 		return nil, err
 	}

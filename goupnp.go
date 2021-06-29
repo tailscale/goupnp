@@ -15,6 +15,7 @@
 package goupnp
 
 import (
+	"context"
 	"encoding/xml"
 	"fmt"
 	"io"
@@ -72,13 +73,13 @@ type MaybeRootDevice struct {
 // "urn:schemas-upnp-org:service:...". A single error is returned for errors
 // while attempting to send the query. An error or RootDevice is returned for
 // each discovered RootDevice.
-func DiscoverDevices(searchTarget string) ([]MaybeRootDevice, error) {
+func DiscoverDevices(ctx context.Context, searchTarget string) ([]MaybeRootDevice, error) {
 	hc, hcCleanup, err := httpuClient()
 	if err != nil {
 		return nil, err
 	}
 	defer hcCleanup()
-	responses, err := ssdp.SSDPRawSearch(hc, string(searchTarget), 2, 3)
+	responses, err := ssdp.SSDPRawSearch(ctx, hc, string(searchTarget), 2, 3)
 	if err != nil {
 		return nil, err
 	}

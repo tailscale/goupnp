@@ -55,9 +55,9 @@ type {{$srvIdent}} struct {
 // if the discovery process failed outright.
 //
 // This is a typical entry calling point into this package.
-func New{{$srvIdent}}Clients() (clients []*{{$srvIdent}}, errors []error, err error) {
+func New{{$srvIdent}}Clients(ctx context.Context) (clients []*{{$srvIdent}}, errors []error, err error) {
 	var genericClients []goupnp.ServiceClient
-	if genericClients, errors, err = goupnp.NewServiceClients({{$srv.Const}}); err != nil {
+	if genericClients, errors, err = goupnp.NewServiceClients(ctx, {{$srv.Const}}); err != nil {
 		return
 	}
 	clients = new{{$srvIdent}}ClientsFromGenericClients(genericClients)

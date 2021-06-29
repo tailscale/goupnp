@@ -2,6 +2,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 
@@ -16,7 +17,7 @@ func main() {
 }
 
 func run() error {
-	devices, err := goupnp.DiscoverDevices(ssdp.SSDPAll)
+	devices, err := goupnp.DiscoverDevices(context.Background(), ssdp.SSDPAll)
 	if err != nil {
 		return err
 	}
