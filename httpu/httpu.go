@@ -101,10 +101,16 @@ func (httpu *HTTPUClient) Do(
 	if !ok {
 		deadline = time.Now().Add(2 * time.Second)
 	}
+	returned := make(chan struct{})
+	defer close(returned)
+
 	go func() {
-		<-ctx.Done()
-		// if context is cancelled, stop any connections by setting time in the past.
-		httpu.conn.SetDeadline(time.Now().Add(-time.Second))
+		select {
+		case <-ctx.Done():
+			// if context is cancelled, stop any connections by setting time in the past.
+			httpu.conn.SetDeadline(time.Now().Add(-time.Second))
+		case <-returned:
+		}
 	}()
 	if err = httpu.conn.SetDeadline(deadline); err != nil {
 		return nil, err
