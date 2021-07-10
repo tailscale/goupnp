@@ -37,7 +37,7 @@ func NewServiceClients(ctx context.Context, searchTarget string) (clients []Serv
 			continue
 		}
 
-		deviceClients, err := NewServiceClientsFromRootDevice(maybeRootDevice.Root, maybeRootDevice.Location, searchTarget)
+		deviceClients, err := NewServiceClientsFromRootDevice(ctx, maybeRootDevice.Root, maybeRootDevice.Location, searchTarget)
 		if err != nil {
 			errors = append(errors, err)
 			continue
@@ -50,20 +50,20 @@ func NewServiceClients(ctx context.Context, searchTarget string) (clients []Serv
 
 // NewServiceClientsByURL creates client(s) for the given service URN, for a
 // root device at the given URL.
-func NewServiceClientsByURL(loc *url.URL, searchTarget string) ([]ServiceClient, error) {
-	rootDevice, err := DeviceByURL(loc)
+func NewServiceClientsByURL(ctx context.Context, loc *url.URL, searchTarget string) ([]ServiceClient, error) {
+	rootDevice, err := DeviceByURL(ctx, loc)
 	if err != nil {
 		return nil, err
 	}
-	return NewServiceClientsFromRootDevice(rootDevice, loc, searchTarget)
+	return NewServiceClientsFromRootDevice(ctx, rootDevice, loc, searchTarget)
 }
 
 // NewServiceClientsFromDevice creates client(s) for the given service URN, in
 // a given root device. The loc parameter is simply assigned to the
 // Location attribute of the returned ServiceClient(s).
-func NewServiceClientsFromRootDevice(rootDevice *RootDevice, loc *url.URL, searchTarget string) ([]ServiceClient, error) {
+func NewServiceClientsFromRootDevice(ctx context.Context, rootDevice *RootDevice, loc *url.URL, searchTarget string) ([]ServiceClient, error) {
 	device := &rootDevice.Device
-	srvs := device.FindService(searchTarget)
+	srvs := device.FindService(ctx, searchTarget)
 	if len(srvs) == 0 {
 		return nil, fmt.Errorf("goupnp: service %q not found within device %q (UDN=%q)",
 			searchTarget, device.FriendlyName, device.UDN)

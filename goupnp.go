@@ -94,7 +94,7 @@ func DiscoverDevices(ctx context.Context, searchTarget string) ([]MaybeRootDevic
 			continue
 		}
 		maybe.Location = loc
-		if root, err := DeviceByURL(loc); err != nil {
+		if root, err := DeviceByURL(ctx, loc); err != nil {
 			maybe.Err = err
 		} else {
 			maybe.Root = root
@@ -104,10 +104,10 @@ func DiscoverDevices(ctx context.Context, searchTarget string) ([]MaybeRootDevic
 	return results, nil
 }
 
-func DeviceByURL(loc *url.URL) (*RootDevice, error) {
+func DeviceByURL(ctx context.Context, loc *url.URL) (*RootDevice, error) {
 	locStr := loc.String()
 	root := new(RootDevice)
-	if err := requestXml(locStr, DeviceXMLNamespace, root); err != nil {
+	if err := requestXml(ctx, locStr, DeviceXMLNamespace, root); err != nil {
 		return nil, ContextError{fmt.Sprintf("error requesting root device details from %q", locStr), err}
 	}
 	var urlBaseStr string
@@ -129,12 +129,16 @@ func DeviceByURL(loc *url.URL) (*RootDevice, error) {
 // but should not be changed after requesting clients.
 var CharsetReaderDefault func(charset string, input io.Reader) (io.Reader, error)
 
-func requestXml(url string, defaultSpace string, doc interface{}) error {
+func requestXml(ctx context.Context, url string, defaultSpace string, doc interface{}) error {
 	timeout := time.Duration(3 * time.Second)
 	client := http.Client{
 		Timeout: timeout,
 	}
-	resp, err := client.Get(url)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return err
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}

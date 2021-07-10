@@ -3,6 +3,7 @@
 package goupnp
 
 import (
+	"context"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -82,7 +83,7 @@ func (device *Device) VisitServices(visitor func(*Service)) {
 
 // FindService finds all (if any) Services under the device and its descendents
 // that have the given ServiceType.
-func (device *Device) FindService(serviceType string) []*Service {
+func (device *Device) FindService(ctx context.Context, serviceType string) []*Service {
 	var services []*Service
 	device.VisitServices(func(s *Service) {
 		if s.ServiceType == serviceType {
@@ -149,21 +150,15 @@ func (srv *Service) String() string {
 
 // RequestSCPD requests the SCPD (soap actions and state variables description)
 // for the service.
-func (srv *Service) RequestSCPD() (*scpd.SCPD, error) {
+func (srv *Service) RequestSCPD(ctx context.Context) (*scpd.SCPD, error) {
 	if !srv.SCPDURL.Ok {
 		return nil, errors.New("bad/missing SCPD URL, or no URLBase has been set")
 	}
 	s := new(scpd.SCPD)
-	if err := requestXml(srv.SCPDURL.URL.String(), scpd.SCPDXMLNamespace, s); err != nil {
+	if err := requestXml(ctx, srv.SCPDURL.URL.String(), scpd.SCPDXMLNamespace, s); err != nil {
 		return nil, err
 	}
 	return s, nil
-}
-
-// RequestSCDP is for compatibility only, prefer RequestSCPD. This was a
-// misspelling of RequestSCDP.
-func (srv *Service) RequestSCDP() (*scpd.SCPD, error) {
-	return srv.RequestSCPD()
 }
 
 func (srv *Service) NewSOAPClient() *soap.SOAPClient {

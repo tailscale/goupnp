@@ -70,8 +70,8 @@ func New{{$srvIdent}}Clients(ctx context.Context) (clients []*{{$srvIdent}}, err
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered service URL.
-func New{{$srvIdent}}ClientsByURL(loc *url.URL) ([]*{{$srvIdent}}, error) {
-	genericClients, err := goupnp.NewServiceClientsByURL(loc, {{$srv.Const}})
+func New{{$srvIdent}}ClientsByURL(ctx context.Context, loc *url.URL) ([]*{{$srvIdent}}, error) {
+	genericClients, err := goupnp.NewServiceClientsByURL(ctx, loc, {{$srv.Const}})
 	if err != nil {
 		return nil, err
 	}
@@ -86,8 +86,8 @@ func New{{$srvIdent}}ClientsByURL(loc *url.URL) ([]*{{$srvIdent}}, error) {
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered root device.
-func New{{$srvIdent}}ClientsFromRootDevice(rootDevice *goupnp.RootDevice, loc *url.URL) ([]*{{$srvIdent}}, error) {
-	genericClients, err := goupnp.NewServiceClientsFromRootDevice(rootDevice, loc, {{$srv.Const}})
+func New{{$srvIdent}}ClientsFromRootDevice(ctx context.Context, rootDevice *goupnp.RootDevice, loc *url.URL) ([]*{{$srvIdent}}, error) {
+	genericClients, err := goupnp.NewServiceClientsFromRootDevice(ctx, rootDevice, loc, {{$srv.Const}})
 	if err != nil {
 		return nil, err
 	}

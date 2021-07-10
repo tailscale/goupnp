@@ -65,8 +65,8 @@ func NewWANIPConnection1Clients(ctx context.Context) (clients []*WANIPConnection
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered service URL.
-func NewWANIPConnection1ClientsByURL(loc *url.URL) ([]*WANIPConnection1, error) {
-	genericClients, err := goupnp.NewServiceClientsByURL(loc, URN_WANIPConnection_1)
+func NewWANIPConnection1ClientsByURL(ctx context.Context, loc *url.URL) ([]*WANIPConnection1, error) {
+	genericClients, err := goupnp.NewServiceClientsByURL(ctx, loc, URN_WANIPConnection_1)
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +81,8 @@ func NewWANIPConnection1ClientsByURL(loc *url.URL) ([]*WANIPConnection1, error) 
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered root device.
-func NewWANIPConnection1ClientsFromRootDevice(rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANIPConnection1, error) {
-	genericClients, err := goupnp.NewServiceClientsFromRootDevice(rootDevice, loc, URN_WANIPConnection_1)
+func NewWANIPConnection1ClientsFromRootDevice(ctx context.Context, rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANIPConnection1, error) {
+	genericClients, err := goupnp.NewServiceClientsFromRootDevice(ctx, rootDevice, loc, URN_WANIPConnection_1)
 	if err != nil {
 		return nil, err
 	}
@@ -721,8 +721,8 @@ func NewWANIPConnection2Clients(ctx context.Context) (clients []*WANIPConnection
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered service URL.
-func NewWANIPConnection2ClientsByURL(loc *url.URL) ([]*WANIPConnection2, error) {
-	genericClients, err := goupnp.NewServiceClientsByURL(loc, URN_WANIPConnection_2)
+func NewWANIPConnection2ClientsByURL(ctx context.Context, loc *url.URL) ([]*WANIPConnection2, error) {
+	genericClients, err := goupnp.NewServiceClientsByURL(ctx, loc, URN_WANIPConnection_2)
 	if err != nil {
 		return nil, err
 	}
@@ -737,8 +737,8 @@ func NewWANIPConnection2ClientsByURL(loc *url.URL) ([]*WANIPConnection2, error) 
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered root device.
-func NewWANIPConnection2ClientsFromRootDevice(rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANIPConnection2, error) {
-	genericClients, err := goupnp.NewServiceClientsFromRootDevice(rootDevice, loc, URN_WANIPConnection_2)
+func NewWANIPConnection2ClientsFromRootDevice(ctx context.Context, rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANIPConnection2, error) {
+	genericClients, err := goupnp.NewServiceClientsFromRootDevice(ctx, rootDevice, loc, URN_WANIPConnection_2)
 	if err != nil {
 		return nil, err
 	}
@@ -1532,8 +1532,8 @@ func NewWANPPPConnection1Clients(ctx context.Context) (clients []*WANPPPConnecti
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered service URL.
-func NewWANPPPConnection1ClientsByURL(loc *url.URL) ([]*WANPPPConnection1, error) {
-	genericClients, err := goupnp.NewServiceClientsByURL(loc, URN_WANPPPConnection_1)
+func NewWANPPPConnection1ClientsByURL(ctx context.Context, loc *url.URL) ([]*WANPPPConnection1, error) {
+	genericClients, err := goupnp.NewServiceClientsByURL(ctx, loc, URN_WANPPPConnection_1)
 	if err != nil {
 		return nil, err
 	}
@@ -1548,8 +1548,8 @@ func NewWANPPPConnection1ClientsByURL(loc *url.URL) ([]*WANPPPConnection1, error
 //
 // This is a typical entry calling point into this package when reusing an
 // previously discovered root device.
-func NewWANPPPConnection1ClientsFromRootDevice(rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANPPPConnection1, error) {
-	genericClients, err := goupnp.NewServiceClientsFromRootDevice(rootDevice, loc, URN_WANPPPConnection_1)
+func NewWANPPPConnection1ClientsFromRootDevice(ctx context.Context, rootDevice *goupnp.RootDevice, loc *url.URL) ([]*WANPPPConnection1, error) {
+	genericClients, err := goupnp.NewServiceClientsFromRootDevice(ctx, rootDevice, loc, URN_WANPPPConnection_1)
 	if err != nil {
 		return nil, err
 	}
