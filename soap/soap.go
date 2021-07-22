@@ -11,7 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"reflect"
-	"regexp"
+	"strings"
 )
 
 const (
@@ -150,7 +150,7 @@ func encodeRequestArgs(w *bytes.Buffer, inAction interface{}) error {
 	return nil
 }
 
-var xmlCharRx = regexp.MustCompile("[<>&]")
+var replacer = strings.NewReplacer("<", "&lt;", ">", "&gt;", "&", "&amp;")
 
 // escapeXMLText is used by generated code to escape text in XML, but only
 // escaping the characters `<`, `>`, and `&`.
@@ -160,19 +160,7 @@ var xmlCharRx = regexp.MustCompile("[<>&]")
 // that this can only be safely used for injecting into XML text, but not into
 // attributes or other contexts.
 func escapeXMLText(s string) string {
-	return xmlCharRx.ReplaceAllStringFunc(s, replaceEntity)
-}
-
-func replaceEntity(s string) string {
-	switch s {
-	case "<":
-		return "&lt;"
-	case ">":
-		return "&gt;"
-	case "&":
-		return "&amp;"
-	}
-	return s
+	return replacer.Replace(s)
 }
 
 type soapEnvelope struct {

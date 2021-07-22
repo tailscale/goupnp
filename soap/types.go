@@ -165,75 +165,64 @@ func parseInt(s string, err *error) int {
 	return int(v)
 }
 
-var dateRegexps = []*regexp.Regexp{
-	// yyyy[-mm[-dd]]
-	regexp.MustCompile(`^(\d{4})(?:-(\d{2})(?:-(\d{2}))?)?$`),
-	// yyyy[mm[dd]]
-	regexp.MustCompile(`^(\d{4})(?:(\d{2})(?:(\d{2}))?)?$`),
+var dateLayouts = []string{
+	"2006-01-02",
+	"20060102",
+
+	"2006-01",
+	"200601",
+
+	"2006",
 }
 
 func parseDateParts(s string) (year, month, day int, err error) {
-	var parts []string
-	for _, re := range dateRegexps {
-		parts = re.FindStringSubmatch(s)
-		if parts != nil {
+	var parsed time.Time
+	for _, layout := range dateLayouts {
+		parsed, err = time.Parse(layout, s)
+		if err == nil {
 			break
 		}
 	}
-	if parts == nil {
+	if err != nil {
 		err = fmt.Errorf("soap date: value %q is not in a recognized ISO8601 date format", s)
 		return
 	}
-
-	year = parseInt(parts[1], &err)
-	month = 1
-	day = 1
-	if len(parts[2]) != 0 {
-		month = parseInt(parts[2], &err)
-		if len(parts[3]) != 0 {
-			day = parseInt(parts[3], &err)
-		}
-	}
-
-	if err != nil {
-		err = fmt.Errorf("soap date: %q: %v", s, err)
-	}
-
+	year = int(parsed.Year())
+	month = int(parsed.Month())
+	day = int(parsed.Day())
 	return
 }
 
-var timeRegexps = []*regexp.Regexp{
-	// hh[:mm[:ss]]
-	regexp.MustCompile(`^(\d{2})(?::(\d{2})(?::(\d{2}))?)?$`),
-	// hh[mm[ss]]
-	regexp.MustCompile(`^(\d{2})(?:(\d{2})(?:(\d{2}))?)?$`),
+var timeLayouts = []string{
+	"15:04:05",
+	"150405",
+
+	"15:04",
+	"1504",
+
+	"15",
 }
 
 func parseTimeParts(s string) (hour, minute, second int, err error) {
-	var parts []string
-	for _, re := range timeRegexps {
-		parts = re.FindStringSubmatch(s)
-		if parts != nil {
+	// special case 24 hour time limit
+	if s == "24:00:00" {
+		return 24, 0, 0, nil
+	}
+	var parsed time.Time
+	for _, layout := range timeLayouts {
+		parsed, err = time.Parse(layout, s)
+		if err == nil {
 			break
 		}
 	}
-	if parts == nil {
+	if err != nil {
 		err = fmt.Errorf("soap time: value %q is not in ISO8601 time format", s)
 		return
 	}
 
-	hour = parseInt(parts[1], &err)
-	if len(parts[2]) != 0 {
-		minute = parseInt(parts[2], &err)
-		if len(parts[3]) != 0 {
-			second = parseInt(parts[3], &err)
-		}
-	}
-
-	if err != nil {
-		err = fmt.Errorf("soap time: %q: %v", s, err)
-	}
-
+	hour = parsed.Hour()
+	minute = parsed.Minute()
+	second = parsed.Second()
 	return
 }
 
