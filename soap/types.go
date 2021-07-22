@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strconv"
 	"strings"
+  "regexp"
 	"time"
 	"unicode/utf8"
 )
@@ -227,31 +227,33 @@ func parseTimeParts(s string) (hour, minute, second int, err error) {
 }
 
 // (+|-)hh[[:]mm]
-var timezoneRegexp = regexp.MustCompile(`^([+-])(\d{2})(?::?(\d{2}))?$`)
+var timezoneLayouts = []string{
+	"+07:00",
+	"-07:00",
 
-func parseTimezone(s string) (offset int, err error) {
+	"+0700",
+	"-0700",
+
+	"+07",
+	"-07",
+}
+
+func parseTimezone(s string) (loc *time.Location, err error) {
 	if s == "Z" {
-		return 0, nil
+		return time.UTC, nil
 	}
-	parts := timezoneRegexp.FindStringSubmatch(s)
-	if parts == nil {
+	var parsed time.Time
+	for _, layout := range timezoneLayouts {
+		parsed, err = time.Parse(layout, s)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
 		err = fmt.Errorf("soap timezone: value %q is not in ISO8601 timezone format", s)
 		return
 	}
-
-	offset = parseInt(parts[2], &err) * 3600
-	if len(parts[3]) != 0 {
-		offset += parseInt(parts[3], &err) * 60
-	}
-	if parts[1] == "-" {
-		offset = -offset
-	}
-
-	if err != nil {
-		err = fmt.Errorf("soap timezone: %q: %v", s, err)
-	}
-
-	return
+	return parsed.Location(), nil
 }
 
 var completeDateTimeZoneRegexp = regexp.MustCompile(`^([^T]+)(?:T([^-+Z]+)(.+)?)?$`)
@@ -296,14 +298,10 @@ type TimeOfDay struct {
 	// Duration of time since midnight.
 	FromMidnight time.Duration
 
-	// Set to true if Offset is specified. If false, then the timezone is
-	// unspecified (and by ISO8601 - implies some "local" time).
-	HasOffset bool
-
 	// Offset is non-zero only if time.tz is used. It is otherwise ignored. If
 	// non-zero, then it is regarded as a UTC offset in seconds. Note that the
 	// sub-minutes is ignored by the marshal function.
-	Offset int
+	Location *time.Location
 }
 
 // MarshalTimeOfDay marshals TimeOfDay to the "time" type.
@@ -321,9 +319,9 @@ func MarshalTimeOfDay(v TimeOfDay) (string, error) {
 func UnmarshalTimeOfDay(s string) (TimeOfDay, error) {
 	t, err := UnmarshalTimeOfDayTz(s)
 	if err != nil {
-		return TimeOfDay{}, err
-	} else if t.HasOffset {
-		return TimeOfDay{}, fmt.Errorf("soap time: value %q contains unexpected timezone", s)
+		return t, err
+	} else if t.Location != time.UTC {
+		return t, fmt.Errorf("soap time: value %q contains unexpected timezone", s)
 	}
 	return t, nil
 }
@@ -335,38 +333,24 @@ func MarshalTimeOfDayTz(v TimeOfDay) (string, error) {
 	d = d % 3600
 	minute := d / 60
 	second := d % 60
-
-	tz := ""
-	if v.HasOffset {
-		if v.Offset == 0 {
-			tz = "Z"
-		} else {
-			offsetMins := v.Offset / 60
-			sign := '+'
-			if offsetMins < 1 {
-				offsetMins = -offsetMins
-				sign = '-'
-			}
-			tz = fmt.Sprintf("%c%02d:%02d", sign, offsetMins/60, offsetMins%60)
-		}
+	if v.Location == nil {
+		t := time.Date(0, 0, 0, int(hour), int(minute), int(second), 0, time.UTC)
+		return t.Format("15:04:05"), nil
 	}
-
-	return fmt.Sprintf("%02d:%02d:%02d%s", hour, minute, second, tz), nil
+	t := time.Date(0, 0, 0, int(hour), int(minute), int(second), 0, v.Location)
+	return t.Format("15:04:05Z07:00"), nil
 }
 
 // UnmarshalTimeOfDayTz unmarshals TimeOfDay from the "time.tz" type.
 func UnmarshalTimeOfDayTz(s string) (tod TimeOfDay, err error) {
 	zoneIndex := strings.IndexAny(s, "Z+-")
 	var timePart string
-	var hasOffset bool
-	var offset int
+	loc := time.UTC
 	if zoneIndex == -1 {
-		hasOffset = false
 		timePart = s
 	} else {
-		hasOffset = true
 		timePart = s[:zoneIndex]
-		if offset, err = parseTimezone(s[zoneIndex:]); err != nil {
+		if loc, err = parseTimezone(s[zoneIndex:]); err != nil {
 			return
 		}
 	}
@@ -381,13 +365,12 @@ func UnmarshalTimeOfDayTz(s string) (tod TimeOfDay, err error) {
 	// ISO8601 special case - values up to 24:00:00 are allowed, so using
 	// strictly greater-than for the maximum value.
 	if fromMidnight > 24*time.Hour || minute >= 60 || second >= 60 {
-		return TimeOfDay{}, fmt.Errorf("soap time.tz: value %q has value(s) out of range", s)
+		return TimeOfDay{Location: localLoc}, fmt.Errorf("soap time.tz: value %q has value(s) out of range", s)
 	}
 
 	return TimeOfDay{
 		FromMidnight: time.Duration(hour*3600+minute*60+second) * time.Second,
-		HasOffset:    hasOffset,
-		Offset:       offset,
+		Location:     loc,
 	}, nil
 }
 
@@ -446,20 +429,14 @@ func UnmarshalDateTimeTz(s string) (result time.Time, err error) {
 	}
 
 	var hour, minute, second int
-	var location *time.Location = localLoc
+	location := localLoc
 	if len(timeStr) != 0 {
 		hour, minute, second, err = parseTimeParts(timeStr)
 		if err != nil {
 			return
 		}
 		if len(zoneStr) != 0 {
-			var offset int
-			offset, err = parseTimezone(zoneStr)
-			if offset == 0 {
-				location = time.UTC
-			} else {
-				location = time.FixedZone("", offset)
-			}
+			location, err = parseTimezone(zoneStr)
 		}
 	}
 

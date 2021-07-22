@@ -185,7 +185,13 @@ func (v TimeOfDayTest) Unmarshal(s string) (interface{}, error) {
 	return UnmarshalTimeOfDay(s)
 }
 func (v TimeOfDayTest) Equal(result interface{}) bool {
-	return v.TimeOfDay == result.(TimeOfDay)
+	now := time.Now()
+	got := result.(TimeOfDay)
+	ok := v.TimeOfDay.FromMidnight == got.FromMidnight
+	if v.TimeOfDay.Location != nil {
+		ok = ok && (now.In(v.TimeOfDay.Location).Equal(now.In(got.Location)))
+	}
+	return ok
 }
 func (v TimeOfDayTest) Dupe(tag string) []convTest {
 	if tag != "no:time.tz" {
@@ -205,7 +211,13 @@ func (v TimeOfDayTzTest) Unmarshal(s string) (interface{}, error) {
 	return UnmarshalTimeOfDayTz(s)
 }
 func (v TimeOfDayTzTest) Equal(result interface{}) bool {
-	return v.TimeOfDay == result.(TimeOfDay)
+	now := time.Now()
+	got := result.(TimeOfDay)
+	ok := v.TimeOfDay.FromMidnight == got.FromMidnight
+	if v.TimeOfDay.Location != nil {
+		ok = ok && (now.In(v.TimeOfDay.Location).Equal(now.In(got.Location)))
+	}
+	return ok
 }
 
 type DateTimeTest struct{ time.Time }
@@ -392,7 +404,7 @@ func Test(t *testing.T) {
 		{str: "foo\n01:02:03", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
 		{str: "01:02:03 foo", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
 		{str: "01:02:03\nfoo", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
-		{str: "01:02:03Z", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
+		{str: "01:02:03Z", value: TimeOfDayTest{TimeOfDay{time010203, time.UTC}}, noMarshal: true, tag: "no:time.tz"},
 		{str: "01:02:03+01", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
 		{str: "01:02:03+01:23", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
 		{str: "01:02:03+0123", value: TimeOfDayTest{}, wantUnmarshalErr: true, noMarshal: true, tag: "no:time.tz"},
@@ -402,15 +414,15 @@ func Test(t *testing.T) {
 
 		// time.tz
 		{str: "24:00:01", value: TimeOfDayTzTest{}, wantUnmarshalErr: true, noMarshal: true},
-		{str: "01Z", value: TimeOfDayTzTest{TimeOfDay{time01, true, 0}}, noMarshal: true},
-		{str: "01:02:03Z", value: TimeOfDayTzTest{TimeOfDay{time010203, true, 0}}},
-		{str: "01+01", value: TimeOfDayTzTest{TimeOfDay{time01, true, 3600}}, noMarshal: true},
-		{str: "01:02:03+01", value: TimeOfDayTzTest{TimeOfDay{time010203, true, 3600}}, noMarshal: true},
-		{str: "01:02:03+01:23", value: TimeOfDayTzTest{TimeOfDay{time010203, true, 3600 + 23*60}}},
-		{str: "01:02:03+0123", value: TimeOfDayTzTest{TimeOfDay{time010203, true, 3600 + 23*60}}, noMarshal: true},
-		{str: "01:02:03-01", value: TimeOfDayTzTest{TimeOfDay{time010203, true, -3600}}, noMarshal: true},
-		{str: "01:02:03-01:23", value: TimeOfDayTzTest{TimeOfDay{time010203, true, -(3600 + 23*60)}}},
-		{str: "01:02:03-0123", value: TimeOfDayTzTest{TimeOfDay{time010203, true, -(3600 + 23*60)}}, noMarshal: true},
+		{str: "01Z", value: TimeOfDayTzTest{TimeOfDay{time01, nil}}, noMarshal: true},
+		{str: "01:02:03Z", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", 0)}}},
+		{str: "01+01", value: TimeOfDayTzTest{TimeOfDay{time01, time.FixedZone("", 3600)}}, noMarshal: true},
+		{str: "01:02:03+01", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", 3600)}}, noMarshal: true},
+		{str: "01:02:03+01:23", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", 3600+23*60)}}},
+		{str: "01:02:03+0123", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", 3600+23*60)}}, noMarshal: true},
+		{str: "01:02:03-01", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", -3600)}}, noMarshal: true},
+		{str: "01:02:03-01:23", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", -(3600 + 23*60))}}},
+		{str: "01:02:03-0123", value: TimeOfDayTzTest{TimeOfDay{time010203, time.FixedZone("", -(3600 + 23*60))}}, noMarshal: true},
 
 		// dateTime
 		{str: "2013-10-08T00:00:00", value: DateTimeTest{time.Date(2013, 10, 8, 0, 0, 0, 0, localLoc)}, tag: "no:dateTime.tz"},
