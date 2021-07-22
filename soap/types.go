@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
-  "regexp"
 	"time"
 	"unicode/utf8"
 )
@@ -256,22 +255,25 @@ func parseTimezone(s string) (loc *time.Location, err error) {
 	return parsed.Location(), nil
 }
 
-var completeDateTimeZoneRegexp = regexp.MustCompile(`^([^T]+)(?:T([^-+Z]+)(.+)?)?$`)
-
 // splitCompleteDateTimeZone splits date, time and timezone apart from an
 // ISO8601 string. It does not ensure that the contents of each part are
 // correct, it merely splits on certain delimiters.
 // e.g "2010-09-08T12:15:10+0700" => "2010-09-08", "12:15:10", "+0700".
 // Timezone can only be present if time is also present.
-func splitCompleteDateTimeZone(s string) (dateStr, timeStr, zoneStr string, err error) {
-	parts := completeDateTimeZoneRegexp.FindStringSubmatch(s)
-	if parts == nil {
-		err = fmt.Errorf("soap date/time/zone: value %q is not in ISO8601 datetime format", s)
+func splitCompleteDateTimeZone(s string) (dateStr, timeStr, zoneStr string) {
+	dateIndex := strings.Index(s, "T")
+	if dateIndex == -1 {
+		dateStr = s
 		return
 	}
-	dateStr = parts[1]
-	timeStr = parts[2]
-	zoneStr = parts[3]
+	dateStr = s[:dateIndex]
+	zoneIndex := strings.IndexAny(s[dateIndex:], "Z+-")
+	if zoneIndex == -1 {
+		timeStr = s[dateIndex+1:]
+		return
+	}
+	timeStr = s[dateIndex+1 : dateIndex+zoneIndex]
+	zoneStr = s[dateIndex+zoneIndex:]
 	return
 }
 
@@ -383,10 +385,7 @@ func MarshalDateTime(v time.Time) (string, error) {
 // UnmarshalDateTime unmarshals time.Time from the SOAP "dateTime" type. This
 // returns a value in the local timezone.
 func UnmarshalDateTime(s string) (result time.Time, err error) {
-	dateStr, timeStr, zoneStr, err := splitCompleteDateTimeZone(s)
-	if err != nil {
-		return
-	}
+	dateStr, timeStr, zoneStr := splitCompleteDateTimeZone(s)
 
 	if len(zoneStr) != 0 {
 		err = fmt.Errorf("soap datetime: unexpected timezone in %q", s)
@@ -418,10 +417,7 @@ func MarshalDateTimeTz(v time.Time) (string, error) {
 // UnmarshalDateTimeTz unmarshals time.Time from the SOAP "dateTime.tz" type.
 // This returns a value in the local timezone when the timezone is unspecified.
 func UnmarshalDateTimeTz(s string) (result time.Time, err error) {
-	dateStr, timeStr, zoneStr, err := splitCompleteDateTimeZone(s)
-	if err != nil {
-		return
-	}
+	dateStr, timeStr, zoneStr := splitCompleteDateTimeZone(s)
 
 	year, month, day, err := parseDateParts(dateStr)
 	if err != nil {
