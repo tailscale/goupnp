@@ -2,7 +2,6 @@ package ssdp
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 	"net/url"
@@ -31,6 +30,13 @@ type HTTPUClient interface {
 	Do(req *http.Request, numSends int) ([]*http.Response, error)
 }
 
+func max(a, b int64) int64 {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 // SSDPRawSearch performs a fairly raw SSDP search request, and returns the
 // unique response(s) that it receives. Each response has the requested
 // searchTarget, a USN, and a valid location. maxWaitSeconds states how long to
@@ -42,28 +48,32 @@ func SSDPRawSearch(
 	ctx context.Context,
 	httpu HTTPUClient,
 	searchTarget string,
-	maxWaitSeconds int,
 	numSends int,
 ) ([]*http.Response, error) {
-	if maxWaitSeconds < 1 {
-		return nil, errors.New("ssdp: maxWaitSeconds must be >= 1")
+	// Must specify at least 1 second according to the spec.
+	var wait int64 = 1
+	// https://openconnectivity.org/upnp-specs/UPnP-arch-DeviceArchitecture-v2.0-20200417.pdf
+	if deadline, ok := ctx.Deadline(); ok {
+		wait = max(wait, int64(time.Until(deadline).Seconds()))
+	}
+
+	header := http.Header{
+		// Putting headers in here avoids them being title-cased.
+		// (The UPnP discovery protocol uses case-sensitive headers)
+		"HOST": []string{ssdpUDP4Addr},
+		"MAN":  []string{ssdpDiscover},
+		"MX":   []string{strconv.FormatInt(wait, 10)},
+		"ST":   []string{searchTarget},
 	}
 
 	req := &http.Request{
 		Method: methodSearch,
 		// TODO: Support both IPv4 and IPv6.
-		Host: ssdpUDP4Addr,
-		URL:  &url.URL{Opaque: "*"},
-		Header: http.Header{
-			// Putting headers in here avoids them being title-cased.
-			// (The UPnP discovery protocol uses case-sensitive headers)
-			"HOST": []string{ssdpUDP4Addr},
-			"MX":   []string{strconv.FormatInt(int64(maxWaitSeconds), 10)},
-			"MAN":  []string{ssdpDiscover},
-			"ST":   []string{searchTarget},
-		},
+		Host:   ssdpUDP4Addr,
+		URL:    &url.URL{Opaque: "*"},
+		Header: header,
 	}
-	ctx, cancel := context.WithTimeout(ctx, time.Duration(maxWaitSeconds)*time.Second+100*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, time.Duration(wait)*time.Second)
 	defer cancel()
 	req = req.WithContext(ctx)
 	allResponses, err := httpu.Do(req, numSends)

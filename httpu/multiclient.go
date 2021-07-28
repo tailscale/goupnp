@@ -17,9 +17,14 @@ var _ ClientInterface = &MultiClient{}
 // NewMultiClient creates a new MultiClient that delegates to all the given
 // clients.
 func NewMultiClient(delegates []ClientInterface) *MultiClient {
-	return &MultiClient{
-		delegates: delegates,
+	return &MultiClient{delegates: delegates}
+}
+
+func (mc *MultiClient) Close() error {
+	for _, d := range mc.delegates {
+		d.Close()
 	}
+	return nil
 }
 
 // Do implements ClientInterface.Do.
