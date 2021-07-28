@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -15,6 +16,7 @@ import (
 // ClientInterface is the general interface provided to perform HTTP-over-UDP
 // requests.
 type ClientInterface interface {
+	io.Closer
 	// Do performs a request. The timeout is how long to wait for before returning
 	// the responses that were received. An error is only returned for failing to
 	// send the request. Failures in receipt simply do not add to the resulting

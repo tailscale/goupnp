@@ -21,7 +21,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/tailscale/goupnp/ssdp"
 )
@@ -33,10 +32,7 @@ type ContextError struct {
 }
 
 func ctxError(err error, msg string) ContextError {
-	return ContextError{
-		Context: msg,
-		Err:     err,
-	}
+	return ContextError{Context: msg, Err: err}
 }
 
 func ctxErrorf(err error, msg string, args ...interface{}) ContextError {
@@ -74,12 +70,12 @@ type MaybeRootDevice struct {
 // while attempting to send the query. An error or RootDevice is returned for
 // each discovered RootDevice.
 func DiscoverDevices(ctx context.Context, searchTarget string) ([]MaybeRootDevice, error) {
-	hc, hcCleanup, err := httpuClient()
+	hc, err := httpuClient()
 	if err != nil {
 		return nil, err
 	}
-	defer hcCleanup()
-	responses, err := ssdp.SSDPRawSearch(ctx, hc, string(searchTarget), 2, 3)
+	defer hc.Close()
+	responses, err := ssdp.SSDPRawSearch(ctx, hc, string(searchTarget), 3)
 	if err != nil {
 		return nil, err
 	}
@@ -129,29 +125,24 @@ func DeviceByURL(ctx context.Context, loc *url.URL) (*RootDevice, error) {
 // but should not be changed after requesting clients.
 var CharsetReaderDefault func(charset string, input io.Reader) (io.Reader, error)
 
-func requestXml(ctx context.Context, url string, defaultSpace string, doc interface{}) error {
-	timeout := time.Duration(3 * time.Second)
-	client := http.Client{
-		Timeout: timeout,
-	}
+func requestXml(ctx context.Context, url string, defaultSpace string, into interface{}) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := client.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return fmt.Errorf("goupnp: got response status %s from %q",
-			resp.Status, url)
+		return fmt.Errorf("goupnp: got response status %s from %q", resp.Status, url)
 	}
 
 	decoder := xml.NewDecoder(resp.Body)
 	decoder.DefaultSpace = defaultSpace
 	decoder.CharsetReader = CharsetReaderDefault
 
-	return decoder.Decode(doc)
+	return decoder.Decode(into)
 }

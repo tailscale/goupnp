@@ -34,7 +34,10 @@ func NewSOAPClient(endpointURL url.URL) *SOAPClient {
 // PerformSOAPAction makes a SOAP request, with the given action.
 // inAction and outAction must both be pointers to structs with string fields
 // only.
-func (client *SOAPClient) PerformAction(ctx context.Context, actionNamespace, actionName string, inAction interface{}, outAction interface{}) error {
+func (client *SOAPClient) PerformAction(
+	ctx context.Context, actionNamespace, actionName string,
+	inAction interface{}, outAction interface{},
+) error {
 	requestBytes, err := encodeRequestAction(actionNamespace, actionName, inAction)
 	if err != nil {
 		return err
@@ -73,20 +76,18 @@ func (client *SOAPClient) PerformAction(ctx context.Context, actionNamespace, ac
 		return fmt.Errorf("goupnp: SOAP request got HTTP %s", response.Status)
 	}
 
-	if outAction != nil {
-		if err := xml.Unmarshal(responseEnv.Body.RawAction, outAction); err != nil {
-			return fmt.Errorf("goupnp: error unmarshalling out action: %v, %v", err, responseEnv.Body.RawAction)
-		}
+	if outAction == nil {
+		return nil
 	}
-
+	if err := xml.Unmarshal(responseEnv.Body.RawAction, outAction); err != nil {
+		return fmt.Errorf("goupnp: error unmarshalling out action: %v, %v", err, responseEnv.Body.RawAction)
+	}
 	return nil
 }
 
 // newSOAPAction creates a soapEnvelope with the given action and arguments.
 func newSOAPEnvelope() *soapEnvelope {
-	return &soapEnvelope{
-		EncodingStyle: soapEncodingStyle,
-	}
+	return &soapEnvelope{EncodingStyle: soapEncodingStyle}
 }
 
 // encodeRequestAction is a hacky way to create an encoded SOAP envelope
