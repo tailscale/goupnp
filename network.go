@@ -1,7 +1,6 @@
 package goupnp
 
 import (
-	"io"
 	"net"
 
 	"github.com/tailscale/goupnp/httpu"
@@ -16,14 +15,12 @@ func httpuClient() (*httpu.MultiClient, error) {
 		return nil, ctxError(err, "requesting host IPv4 addresses")
 	}
 
-	closers := make([]io.Closer, 0, len(addrs))
 	delegates := make([]httpu.ClientInterface, 0, len(addrs))
 	for _, addr := range addrs {
 		c, err := httpu.NewHTTPUClientAddr(addr)
 		if err != nil {
 			return nil, ctxErrorf(err, "creating HTTPU client for address %s", addr)
 		}
-		closers = append(closers, c)
 		delegates = append(delegates, c)
 	}
 
