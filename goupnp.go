@@ -125,12 +125,14 @@ func DeviceByURL(ctx context.Context, loc *url.URL) (*RootDevice, error) {
 // but should not be changed after requesting clients.
 var CharsetReaderDefault func(charset string, input io.Reader) (io.Reader, error)
 
+var HTTPClient = http.DefaultClient
+
 func requestXml(ctx context.Context, url string, defaultSpace string, into interface{}) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
