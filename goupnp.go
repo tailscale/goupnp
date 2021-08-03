@@ -125,6 +125,7 @@ func DeviceByURL(ctx context.Context, loc *url.URL) (*RootDevice, error) {
 // but should not be changed after requesting clients.
 var CharsetReaderDefault func(charset string, input io.Reader) (io.Reader, error)
 
+// HTTPClient is the client used inside of requestXml for fetching XML from a specific endpoint.
 var HTTPClient = http.DefaultClient
 
 func requestXml(ctx context.Context, url string, defaultSpace string, into interface{}) error {
