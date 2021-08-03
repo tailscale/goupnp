@@ -22,12 +22,15 @@ const (
 
 type SOAPClient struct {
 	EndpointURL url.URL
-	HTTPClient  http.Client
+	HTTPClient  *http.Client
 }
 
-func NewSOAPClient(endpointURL url.URL) *SOAPClient {
+// NewSoapClient creates a new soap client to a specific URL using a given http.Client.
+// The http.Client must not be nil.
+func NewSOAPClient(endpointURL url.URL, httpClient *http.Client) *SOAPClient {
 	return &SOAPClient{
 		EndpointURL: endpointURL,
+		HTTPClient:  httpClient,
 	}
 }
 
