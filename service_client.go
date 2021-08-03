@@ -68,11 +68,10 @@ func NewServiceClientsFromRootDevice(ctx context.Context, rootDevice *RootDevice
 		return nil, fmt.Errorf("goupnp: service %q not found within device %q (UDN=%q)",
 			searchTarget, device.FriendlyName, device.UDN)
 	}
-
 	clients := make([]ServiceClient, 0, len(srvs))
 	for _, srv := range srvs {
 		clients = append(clients, ServiceClient{
-			SOAPClient: srv.NewSOAPClient(),
+			SOAPClient: srv.NewSOAPClient(httpClient(ctx)),
 			RootDevice: rootDevice,
 			Location:   loc,
 			Service:    srv,

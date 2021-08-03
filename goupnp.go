@@ -125,15 +125,28 @@ func DeviceByURL(ctx context.Context, loc *url.URL) (*RootDevice, error) {
 // but should not be changed after requesting clients.
 var CharsetReaderDefault func(charset string, input io.Reader) (io.Reader, error)
 
-// HTTPClient is the client used inside of requestXml for fetching XML from a specific endpoint.
-var HTTPClient = http.DefaultClient
+// contextKey is an unexported type which prevents construction of other contextKeys.
+type httpContextKey struct{}
+
+// WithHTTPClient returns a context wrapping ctx with the HTTP client set to c.
+// If c is nil, http.DefaultClient is used.
+func WithHTTPClient(ctx context.Context, c *http.Client) context.Context {
+	return context.WithValue(ctx, httpContextKey{}, c)
+}
+
+func httpClient(ctx context.Context) *http.Client {
+	if c, _ := ctx.Value(httpContextKey{}).(*http.Client); c != nil {
+		return c
+	}
+	return http.DefaultClient
+}
 
 func requestXml(ctx context.Context, url string, defaultSpace string, into interface{}) error {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
-	resp, err := HTTPClient.Do(req)
+	resp, err := httpClient(ctx).Do(req)
 	if err != nil {
 		return err
 	}

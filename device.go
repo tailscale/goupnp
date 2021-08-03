@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 
 	"github.com/tailscale/goupnp/scpd"
@@ -161,8 +162,14 @@ func (srv *Service) RequestSCPD(ctx context.Context) (*scpd.SCPD, error) {
 	return s, nil
 }
 
-func (srv *Service) NewSOAPClient() *soap.SOAPClient {
-	return soap.NewSOAPClient(srv.ControlURL.URL)
+// NewSOAPClient returns a new SOAP client to the service's control
+// URL, using the provided http.Client.
+// If httpc is nil, http.DefaultClient is used.
+func (srv *Service) NewSOAPClient(httpc *http.Client) *soap.SOAPClient {
+	if httpc == nil {
+		httpc = http.DefaultClient
+	}
+	return soap.NewSOAPClient(srv.ControlURL.URL, httpc)
 }
 
 // URLField is a URL that is part of a device description.
