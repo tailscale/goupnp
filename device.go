@@ -84,7 +84,7 @@ func (device *Device) VisitServices(visitor func(*Service)) {
 
 // FindService finds all (if any) Services under the device and its descendents
 // that have the given ServiceType.
-func (device *Device) FindService(ctx context.Context, serviceType string) []*Service {
+func (device *Device) FindService(serviceType string) []*Service {
 	var services []*Service
 	device.VisitServices(func(s *Service) {
 		if s.ServiceType == serviceType {

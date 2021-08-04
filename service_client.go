@@ -63,7 +63,7 @@ func NewServiceClientsByURL(ctx context.Context, loc *url.URL, searchTarget stri
 // Location attribute of the returned ServiceClient(s).
 func NewServiceClientsFromRootDevice(ctx context.Context, rootDevice *RootDevice, loc *url.URL, searchTarget string) ([]ServiceClient, error) {
 	device := &rootDevice.Device
-	srvs := device.FindService(ctx, searchTarget)
+	srvs := device.FindService(searchTarget)
 	if len(srvs) == 0 {
 		return nil, fmt.Errorf("goupnp: service %q not found within device %q (UDN=%q)",
 			searchTarget, device.FriendlyName, device.UDN)
